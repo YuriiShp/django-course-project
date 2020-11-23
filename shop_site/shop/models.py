@@ -9,8 +9,10 @@ from django.utils.text import slugify
 # Create your models here.
 class Item(models.Model):
     article = models.ForeignKey('Article', on_delete=models.CASCADE, related_name='items')
-    size = models.CharField(max_length=100)
     price = models.FloatField(default=0)
+    size = models.CharField(max_length=100, blank=True, null=True)
+    mass = models.CharField(max_length=100, blank=True, null=True)
+    volume = models.CharField(max_length=100, blank=True, null=True)
 
     sale = models.BooleanField(default=False)
     sale_price = models.FloatField(blank=True)
@@ -35,23 +37,41 @@ class Item(models.Model):
     def save(self, *args, **kwargs):
         if self.sale == False:
             self.sale_price = self.price
+
+        if self.amount_avaliable == 0:
+            self.in_stock = False
+        else:
+            self.in_stock = True
+        print(self.price)
+
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return str(self.article) + ', ' + str(self.size)
+        if self.size:
+            return str(self.article) + ', ' + str(self.size)
+        if self.mass:
+            return str(self.article) + ', ' + str(self.mass)
+        if self.volume:
+            return str(self.article) + ', ' + str(self.volume)
+        return str(self.article)
+
+
+    class Meta:
+        ordering = ['article']
 
 
 
 class Article(models.Model):
     image = models.ImageField(upload_to='shop/articles/', blank=True)
     title = models.CharField(max_length=100)
-    brand = models.ForeignKey('Brand', on_delete=models.CASCADE)
+    brand = models.ForeignKey('Brand', on_delete=models.CASCADE, related_name='articles')
     description = models.TextField(blank=True)
     contents = models.TextField(blank=True)
     manual = models.TextField(blank=True)
-    category = models.ForeignKey('Category', on_delete=models.CASCADE)
+    category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='articles')
 
     reviews = models.ManyToManyField('Review', blank=True)
+    average_rate = models.FloatField(default=0)
 
     slug = models.SlugField(allow_unicode=True, null=True, unique=True, editable=False)
 
@@ -59,6 +79,7 @@ class Article(models.Model):
         plain_text_cyrilic = ' '.join([str(self.brand), str(self.title)])
         plain_text_latin = transliterate(plain_text_cyrilic)
         self.slug = slugify(plain_text_latin)
+        self.average_rate = self.get_average_rate()
         super().save(*args, **kwargs)
 
     def get_average_rate(self):
@@ -68,7 +89,7 @@ class Article(models.Model):
         num_of_voters = 1
         if self.reviews.count() != 0:
             num_of_voters = self.reviews.count()
-            
+
         avreage_rate = total_rate / num_of_voters
 
         return round(avreage_rate,  1)
@@ -78,6 +99,7 @@ class Article(models.Model):
 
     class Meta:
         ordering = ['brand']
+        unique_together = ['title', 'brand']
 
 
 class Brand(models.Model):
@@ -92,9 +114,14 @@ class Category(models.Model):
     name = models.CharField(max_length=100)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='children', blank=True, null=True)
     slug = models.SlugField(allow_unicode=True, null=True, editable=False)
+    level = models.IntegerField(default=1)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(transliterate(self.name))
+
+        if not self.parent:
+            self.level = 0
+
         super().save(*args, **kwargs)
 
     def __str__(self):

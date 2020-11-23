@@ -5,11 +5,11 @@ from django.views.generic import (
 )
 
 from shop import models
-from django.db.models import Sum
+from django.db.models import Sum, Q
 
 
 
-class BasePageMixin(object):
+class NavBarMixin(object):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -19,13 +19,80 @@ class BasePageMixin(object):
         return context
 
 
-class HomePage(BasePageMixin,ListView):
+class SideBarMixin(object):
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context['breadcrumb'] = []
+
+        # breadcrumb context
+        categories = models.Category.objects.all()
+        category = None
+        parent = None
+        for i in self.kwargs.values():
+            category = categories.get(slug=i, parent=parent)
+            context['breadcrumb'].append(category)
+            parent = category
+
+        # sizes
+        context['masses'] = models.Article.objects.filter(
+            Q(category=category) |
+            Q(category__parent=category)
+        ).exclude(items__mass__isnull=True).values_list('items__mass', flat=True)
+
+        context['volumes'] = models.Article.objects.filter(
+            Q(category=category) |
+            Q(category__parent=category)
+        ).exclude(items__volume__isnull=True).values_list('items__volume', flat=True)
+
+        context['sizes'] = models.Article.objects.filter(
+            Q(category=category) |
+            Q(category__parent=category)
+        ).exclude(items__size__isnull=True).values_list('items__size', flat=True)
+
+        # brands
+        context['brand'] = models.Brand.objects.filter(
+            Q(articles__category=category) |
+            Q(articles__category__parent=category)
+        ).distinct()
+
+        # ratings
+        context['raitings'] = models.Review.objects.values_list('rate', flat=True)
+
+        return context
+
+
+class FilterMixin(object):
+
+    def apply_filters(self, queryset):
+
+        if self.request.GET:
+            filters_dict = self.request.GET
+
+            for key in filters_dict.keys():
+                if key == "sale":
+                    queryset = queryset.filter(items__sale=filters_dict[key]).distinct()
+                if key == "brand":
+                    queryset = queryset.filter(brand__name=filters_dict[key])
+                if key == "rate":
+                    queryset = queryset.filter(average_rate__gte=filters_dict[key])
+                if key == "mass":
+                    queryset = queryset.filter(items__mass=filters_dict[key]).distinct()
+                if key == "volume":
+                    queryset = queryset.filter(items__volume=filters_dict[key]).distinct()
+                if key == "size":
+                    queryset = queryset.filter(items__size=filters_dict[key]).distinct()
+
+        return queryset
+
+
+class HomePage(NavBarMixin,ListView):
     model = models.Article
     template_name = 'shop/index.html'
     context_object_name = 'articles'
 
     def get_queryset(self):
-        queryset = models.Article.objects.exclude(items__sale=False)
+        queryset = models.Article.objects.filter(items__sale=True).distinct()
         return queryset
 
     def get_context_data(self):
@@ -40,11 +107,11 @@ class HomePage(BasePageMixin,ListView):
         return context
 
 
-class ProductsPage(BasePageMixin,ListView):
+class ProductsPage(NavBarMixin,SideBarMixin,FilterMixin,ListView):
     model = models.Article
-    template_name = 'shop/contents.html'
+    template_name = 'shop/content.html'
     context_object_name = 'articles'
-    paginate_by = 20
+    paginate_by = 12
     paginate_orphans = 4
 
     def get_queryset(self):
@@ -60,11 +127,19 @@ class ProductsPage(BasePageMixin,ListView):
             else:
                 parent = category
 
-        queryset = models.Article.objects.filter(category=category)
+        if len(self.kwargs.values()) == 1:
+            queryset = models.Article.objects.filter(category__parent__parent=category)
+        elif len(self.kwargs.values()) == 2:
+            queryset = models.Article.objects.filter(category__parent=category)
+        elif len(self.kwargs.values()) == 3:
+            queryset = models.Article.objects.filter(category=category)
+
+        queryset = self.apply_filters(queryset)
+
         return queryset
 
 
-class ArticleDetail(BasePageMixin, DetailView):
+class ArticleDetail(NavBarMixin, DetailView):
     model = models.Article
     context_object_name = 'article'
     template_name = 'shop/article_detail.html'
@@ -73,6 +148,8 @@ class ArticleDetail(BasePageMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['average_rate'] = self.object.get_average_rate()
         return context
+
+
 
 
 

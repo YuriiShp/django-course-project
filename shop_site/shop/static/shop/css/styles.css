@@ -73,14 +73,17 @@ img {
 
 .content-container {
   margin-top: 20px;
-  height: 390px;
+  height: 350px;
 }
 
 .card {
-  height: 380px;
-  border-radius: 20px;
+  height: 340px;
+  border-radius: 15px;
   font-size: 13px;
   color: #000;
+}
+.card:hover{
+  box-shadow: 5px 5px 5px #90be6d;
 }
 
 a:hover{
@@ -104,7 +107,7 @@ a:hover{
 
 .card-body .container{
   width: auto;
-  height: 110px;
+  height: 70px;
   padding: 0px;
 
 }
@@ -144,7 +147,7 @@ a:hover{
 	}
 }
 
-.article-detail {
+.main-content{
   background-color: #fff;
   min-height: 500px;
   display: flex;
@@ -153,11 +156,13 @@ a:hover{
 
 
 .breadcrumb {
-
+  background-color: #f8f9fa;
+  margin-bottom: 0px;
 }
 
 .breadcrumb-item a{
   color: #6b705c;
+  font-size: 13px;
 }
 
 .fa-star, .fa-star-half-alt {
@@ -189,4 +194,44 @@ a:hover{
 
 .rev-text{
   margin-top: 20px;
+}
+
+.side-bar{
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.article-field{
+  background-color: #f8f9fa;
+  height: 500px;
+  border-radius: 5px;
+  padding: 30px;
+}
+
+.side-bar h4{
+  font-size: 15px;
+}
+
+.side-bar .side-header{
+  color: #0fa602;
+}
+
+.side-bar li a,
+.side-bar p a{
+  color: #6b705c;
+}
+
+.side-bar li a:hover,
+.side-bar p a:hover{
+  color: #0fa602;
+}
+
+.side-bar ul{
+  list-style-type: none;
+  padding-left: 0px;
+}
+
+.side-bar .category-cascade{
+  padding-left: 1rem;
 }

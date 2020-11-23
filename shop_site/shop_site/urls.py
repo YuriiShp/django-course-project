@@ -20,7 +20,8 @@ from . import settings
 
 
 urlpatterns = [
-    path('', include('shop.urls')),
+    path('templates/', include('shop.urls')),
+    path('api/', include('shop_api.urls')),
     path('admin/', admin.site.urls),
 ]
 

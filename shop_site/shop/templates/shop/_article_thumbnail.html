@@ -1,0 +1,57 @@
+<a href="{% url 'shop:about_article' slug=article.slug %}">
+    <div class="card">
+      <div class="container">
+        <img src="{{ article.image.url }}" class="card-img-top" alt="...">
+      </div>
+      <div class="card-body">
+        <h6>
+          {% for item in article.items.all %}
+            {% if forloop.counter == 1 %}
+              <span class="badge badge-success">{{ item.mass }}</span>
+            {% else %}
+              <span class="badge badge-default">{{ item.mass }}</span>
+            {% endif %}
+          {% endfor %}
+        </h6>
+        <div class="container">
+          <p class="card-text"><strong>{{ article.brand }}</strong> {{ article.title }}</p>
+        </div>
+  
+        {% if article.get_average_rate < 1 %}
+          <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+        {% elif article.get_average_rate == 1 %}
+          <i class="fas fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+        {% elif article.get_average_rate > 1 and article.get_average_rate < 2 %}
+          <i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+        {% elif article.get_average_rate == 2 %}
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+        {% elif article.get_average_rate > 2 and article.get_average_rate < 3 %}
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+        {% elif article.get_average_rate == 3 %}
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+        {% elif article.get_average_rate > 3 and article.get_average_rate < 4 %}
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><i class="far fa-star"></i>
+        {% elif article.get_average_rate == 4 %}
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+        {% elif article.get_average_rate > 4 and article.get_average_rate < 5 %}
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+        {% else %}
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+        {% endif %}
+
+        <div class="row row-cols-2">
+
+            <div class="col" style="color: red">
+              <strong>{{ article.items.first.sale_price }} грн</strong>
+            </div>
+            {% if article.items.first.sale == True %}
+              <div class="col" style="text-decoration: line-through">
+                {{ article.items.first.price }} грн
+              </div>
+            {% endif %}
+        </div>
+        <h6><span class="badge badge-secondary">Більше варіантів</span></h6>
+
+      </div>
+    </div>
+  </a>

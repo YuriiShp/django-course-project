@@ -1,0 +1,192 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid" style="padding: 0px;">
+
+  <!-- bread crumb -->
+  <div class="container">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'shop:home' %}"><strong>ГОЛОВНА</strong></a></li>
+        {% for breaditem in breadcrumb %}
+          {% if forloop.counter == 1 %}
+            <li class="breadcrumb-item"><a href="{% url 'shop:products' category=breaditem.slug %}">{{breaditem.name|upper}}</a></li>
+          {% elif forloop.counter == 2 %}
+            <li class="breadcrumb-item"><a href="{% url 'shop:products' category=breaditem.parent.slug sub_cat_1=breaditem.slug %}">{{breaditem.name|upper}}</a></li>
+          {% elif forloop.counter == 3 %}
+            <li class="breadcrumb-item"><a href="{% url 'shop:products' category=breaditem.parent.parent.slug sub_cat_1=breaditem.parent.slug sub_cat_2=breaditem.slug %}">{{breaditem.name|upper}}</a></li>
+          {% endif %}
+        {% endfor %}
+      </ol>
+    </nav>
+  </div>
+  <!-- bread crumb end -->
+
+</div>
+
+<div class="main-content">
+
+  <div class="container">
+
+    <div class="row">
+
+      <!-- sidebar -->
+      <div class="col-3">
+        <div class="side-bar">
+          <h4 class="side-header">Фільтри по:</h4>
+
+          <h4>Категорії</h4>
+          <ul class="category-cascade">
+
+            <li><a href="{% url 'shop:products' category=breadcrumb.0.slug %}">{{ breadcrumb.0.name }}</a></li>
+
+            <ul class="category-cascade">
+              <li><a href="{% url 'shop:products' category=breadcrumb.0.slug sub_cat_1=breadcrumb.1.slug %}">{{ breadcrumb.1.name }}</a></li>
+
+              <ul class="category-cascade">
+                {% if breadcrumb.2 %}
+                  <li><a href="{% url 'shop:products' category=breadcrumb.0.slug sub_cat_1=breadcrumb.1.slug sub_cat_2=breadcrumb.2.slug %}">{{ breadcrumb.2.name }} ({{ breadcrumb.2.articles.all.count }})</a></li>
+                {% else %}
+                  {% for subcategory in breadcrumb.1.children.all %}
+                    <li><a href="{% url 'shop:products' category=breadcrumb.0.slug sub_cat_1=breadcrumb.1.slug sub_cat_2=subcategory.slug %}">{{ subcategory.name }} ({{ subcategory.articles.all.count }})</a></li>
+                  {% endfor %}
+                {% endif %}
+              </ul>
+
+            </ul>
+
+          </ul>
+          <hr/>
+
+            <form id="sale" action="?" method="get">
+
+              <input type="hidden" name="sale" value="True">
+              <p>
+                <a href="javascript:{}" onclick="document.getElementById('sale').submit(); return false;" name="sale" value="True">
+                  Позиції зі знижкою
+                </a>
+              </p>
+
+              <input type="checkbox" id="check" name="q" value="none" checked="true">
+              <label for="check">
+                <a href="javascript:{}" onclick="document.getElementById('sale').submit(); return false;">
+                  Позиції зі знижкою
+                </a>
+              </label>
+
+              <hr/>
+
+              <h4>Бренд</h4>
+              <ul>
+                {% for bd in brand %}
+                  <li>
+                    <input type="hidden" name="brand" value="True">
+                    <a href="javascript:{}" onclick="document.getElementById('sale').submit(); return false;">{{ bd.name }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+
+            </form>
+
+            <hr/>
+
+
+              {% if masses %}
+                <h4>Вага</h4>
+                <ul>
+                  {% for mass in masses %}
+                    {% if mass %}
+                      <li><a href="#">{{ mass }}</a></li>
+                    {% endif %}
+                  {% endfor %}
+                </ul>
+                <hr/>
+              {% endif %}
+
+
+
+              {% if volumes %}
+                <h4>Обєм</h4>
+                <ul>
+                  {% for volume in volumes %}
+                    {% if volume %}
+                      <li><a href="#">{{ volume }}</a></li>
+                    {% endif %}
+                  {% endfor %}
+                </ul>
+                <hr/>
+              {% endif %}
+
+
+              {% if sizes%}
+                <h4>Розмір</h4>
+                <ul>
+                  {% for size in sizes %}
+                    {% if size %}
+                      <li><a href="#">{{ size }}</a></li>
+                    {% endif %}
+                  {% endfor %}
+                </ul>
+                <hr/>
+              {% endif %}
+
+
+              <h4>Рейтинг</h4>
+              <ul>
+                <li>
+                  <a href="#">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+                    <span>та вище</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+                    <span>та вище</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+                    <span>та вище</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <i class="fas fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+                    <span>та вище</span>
+                  </a>
+                </li>
+              </ul>
+
+
+
+        </div>
+      </div>
+      <!-- sidebar end -->
+
+      <!-- articles -->
+      <div class="col-9">
+        <div class="article-field">
+          <div class="row">
+            {% for article in page_obj %}
+              <div class="col-4">
+                {% include "shop/_article_thumbnail.html" %}
+              </div>
+            {% endfor %}
+
+          </div>
+
+        </div>
+      </div>
+      <!-- articles end -->
+
+    </div>
+  </div>
+
+
+</div>
+
+{% endblock %}

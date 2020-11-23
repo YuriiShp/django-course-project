@@ -36,48 +36,13 @@
 
 <div class="container">
   <div class="jumbotron">
-    <h3>Товари зі знижкою</h3>
+    <h4 style="padding-left: 10px;">Товари зі знижкою</h4>
     <div class="overflow-auto">
       <div class="container content-container">
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4">
           {% for article in articles %}
           <div class="col mb-4">
-
-            <a href="{% url 'shop:about_article' slug=article.slug %}">
-                <div class="card">
-                  <div class="container">
-                    <img src="{{ article.image.url }}" class="card-img-top" alt="...">
-                  </div>
-                  <div class="card-body">
-                    <h6>
-                      {% for item in article.items.all %}
-                        {% if forloop.counter == 1 %}
-                          <span class="badge badge-success">{{ item.size }}</span>
-                        {% else %}
-                          <span class="badge badge-default">{{ item.size }}</span>
-                        {% endif %}
-                      {% endfor %}
-                    </h6>
-                    <div class="container">
-                      <p class="card-text"><strong>{{ article.brand }}</strong> {{ article.title }}</p>
-                    </div>
-                    <div class="row row-cols-2">
-
-                        <div class="col" style="color: red">
-                          <strong>{{ article.items.first.sale_price }} грн</strong>
-                        </div>
-                        <div class="col" style="text-decoration: line-through">
-                          {{ article.items.first.price }} грн
-                        </div>
-                    </div>
-                    <form method="get" style="justify-content: center; display: flex; margin-top: 5px;">
-                      <input type="submit" class="btn btn-success btn-sm" style="margin: auto" value="До кошика">
-
-                    </form>
-
-                  </div>
-                </div>
-              </a>
+            {% include "shop/_article_thumbnail.html" %}
           </div>
           {% endfor %}
 
@@ -87,45 +52,13 @@
   </div>
 
   <div class="jumbotron">
-    <h3>Хіти продажу</h3>
+    <h4 style="padding-left: 10px;">Хіти продажу</h4>
     <div class="overflow-auto">
       <div class="container content-container">
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4">
           {% for article in bestsellers.articles %}
           <div class="col mb-4">
-            <div class="card">
-              <div class="container">
-                <img src="{{ article.image.url }}" class="card-img-top" alt="...">
-              </div>
-              <div class="card-body">
-                <h6>
-                  {% for item in article.items.all %}
-                    {% if forloop.counter == 1 %}
-                      <span class="badge badge-success">{{ item.size }}</span>
-                    {% else %}
-                      <span class="badge badge-default">{{ item.size }}</span>
-                    {% endif %}
-                  {% endfor %}
-                </h6>
-                <div class="container">
-                  <p class="card-text"><strong>{{ article.brand }}</strong> {{ article.title }}</p>
-                </div>
-                <div class="row row-cols-2">
-
-                    <div class="col" style="color: red">
-                      <strong>{{ article.items.first.sale_price }} грн</strong>
-                    </div>
-                    <div class="col" style="text-decoration: line-through">
-                      {{ article.items.first.price }} грн
-                    </div>
-                </div>
-                <form method="get" style="justify-content: center; display: flex; margin-top: 5px;">
-                  <input type="submit" class="btn btn-success btn-sm" style="margin: auto" value="До кошика">
-
-                </form>
-
-              </div>
-            </div>
+            {% include "shop/_article_thumbnail.html" %}
           </div>
           {% endfor %}
 
