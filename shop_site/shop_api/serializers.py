@@ -2,7 +2,8 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from shop.models import (
-    Article, Item, Brand, Category, Review
+    Article, Item, Brand, Category, Review,
+    SalesRecord, InOutRecord, SaleApply
 )
 
 
@@ -13,23 +14,46 @@ class BrandSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class CategorySerializer(serializers.ModelSerializer):
+"""Category Serializers"""
+
+class CategoryGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
         fields = [
+            'id',
             'name',
             'slug',
             'children'
         ]
 
     def get_fields(self):
-        fields = super(CategorySerializer, self).get_fields()
-        fields['children'] = CategorySerializer(many=True)
+        fields = super(CategoryGetSerializer, self).get_fields()
+        fields['children'] = CategoryGetSerializer(many=True)
         return fields
 
 
-"""General articles info (List View display)"""
+class CategoryAddSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Category
+        fields = [
+            'parent',
+            'name'
+        ]
+
+
+class CategoryIDSerializer(serializers.Serializer):
+    pk = serializers.IntegerField()
+
+    def validate(self, attrs):
+        if Category.objects.filter(pk=attrs['pk']).exists():
+            return attrs
+        else:
+            raise ValidationError(detail='Object not found')
+
+
+"""Article serializers for request method GET (list)"""
 
 class GeneralItemInfoSerializer(serializers.ModelSerializer):
 
@@ -65,7 +89,7 @@ class GeneralArticleInfoSerializer(serializers.ModelSerializer):
         ]
 
 
-"""Full article info (Detail View display)"""
+"""Article serializers for request method GET (single)"""
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
@@ -91,7 +115,7 @@ class FullArticleInfoSerializer(GeneralArticleInfoSerializer):
             'image',
             'brand',
             'description',
-            'content',
+            'contents',
             'manual',
             'average_rate',
             'reviews',
@@ -100,37 +124,52 @@ class FullArticleInfoSerializer(GeneralArticleInfoSerializer):
         ]
 
 
-"""Adding items"""
-#
-# class ArticleExistsPostSerializer(serializers.Serializer):
-#
-#     class Meta:
-#         fields = [
-#             'title',
-#             'brand'
-#         ]
-#
-#     def validate(self, attrs):
-#         if Article.objects.get(**attrs):
-#             return attrs
-#         else:
-#             raise ValidationError('article does not exist')
-#
-#
-# class ArticleDoesNotExistsPostSerializer(serializers.ModelSerializer):
-#     brand = serializers.StringRelatedField()
-#     category = serializers.StringRelatedField()
-#
-#     class Meta:
-#         model = Article
-#         fields = [
-#             'title',
-#             'image',
-#             'brand',
-#             'description',
-#             'content',
-#             'manual',
-#         ]
+"""Article serializers for request method POST/PUT/PATCH """
+
+class ArticleAddSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Article
+        fields = [
+            'category',
+            'title',
+            'image',
+            'brand',
+            'description',
+            'contents',
+            'manual'
+        ]
+
+
+"""Item serializers"""
+
+class ItemIDSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    def validate(self, attrs):
+        if Item.objects.filter(pk=attrs['id']).exists():
+            return attrs
+        else:
+            raise ValidationError('item not found')
+
+
+class ItemGetSerializer(serializers.ModelSerializer):
+    article = serializers.StringRelatedField()
+
+    class Meta:
+        model = Item
+        fields = [
+            'id',
+            'article',
+            'mass',
+            'volume',
+            'size',
+            'price',
+            'sale',
+            'sale_rate',
+            'sale_price',
+            'amount_avaliable'
+        ]
 
 
 class ItemPostSerializer(serializers.ModelSerializer):
@@ -138,15 +177,38 @@ class ItemPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = [
-            'article_id',
+            'article',
             'mass',
             'volume',
             'size',
-            'sale',
             'price',
+            'amount_avaliable'
         ]
 
-    def create(self, validated_data):
-        print(validated_data.keys())
-        article = Article.objects.get(pk=validated_data['article_id'])
-        return Item.objects.create(**validated_data, article=article)
+
+class ManageStockSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = InOutRecord
+        fields = [
+            'item',
+            'amount',
+            'mode'
+        ]
+
+
+class ApplySaleSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SaleApply
+        fields = [
+            'item',
+            'sale_rate'
+        ]
+
+
+class UnApplySaleSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SaleApply
+        fields = ['item']

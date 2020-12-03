@@ -15,6 +15,7 @@ class Item(models.Model):
     volume = models.CharField(max_length=100, blank=True, null=True)
 
     sale = models.BooleanField(default=False)
+    sale_rate = models.FloatField(default=0)
     sale_price = models.FloatField(blank=True)
 
     amount_avaliable = models.PositiveIntegerField(default=0)
@@ -27,11 +28,13 @@ class Item(models.Model):
                 params={'rate': rate},
             )
         self.sale = True
+        self.sale_rate = rate
         self.sale_price = round(self.price * (1-rate), 2)
         self.save()
 
     def unapply_sale(self):
         self.sale = False
+        self.sale_rate = 0
         self.save()
 
     def save(self, *args, **kwargs):
@@ -46,6 +49,26 @@ class Item(models.Model):
 
         super().save(*args, **kwargs)
 
+    def add_items(self, amount):
+        if not isinstance(amount, int) or amount < 0:
+            raise ValueError(
+                _('invalid amount'),
+                params={'amount': amount},
+            )
+        self.amount_avaliable += amount
+        self.save()
+
+    def rem_items(self, amount):
+        if not isinstance(amount, int) or amount < 0:
+            raise ValueError(
+                _('invalid amount'),
+                params={'amount': amount},
+            )
+        self.amount_avaliable -= amount
+        if self.amount_avaliable < 0:
+            self.amount_avaliable = 0
+        self.save()
+
     def __str__(self):
         if self.size:
             return str(self.article) + ', ' + str(self.size)
@@ -55,14 +78,12 @@ class Item(models.Model):
             return str(self.article) + ', ' + str(self.volume)
         return str(self.article)
 
-
     class Meta:
         ordering = ['article']
 
 
-
 class Article(models.Model):
-    image = models.ImageField(upload_to='shop/articles/', blank=True)
+    image = models.ImageField(upload_to='shop/articles/', blank=True, null=True)
     title = models.CharField(max_length=100)
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, related_name='articles')
     description = models.TextField(blank=True)
@@ -79,7 +100,8 @@ class Article(models.Model):
         plain_text_cyrilic = ' '.join([str(self.brand), str(self.title)])
         plain_text_latin = transliterate(plain_text_cyrilic)
         self.slug = slugify(plain_text_latin)
-        self.average_rate = self.get_average_rate()
+        if self.id:
+            self.average_rate = self.get_average_rate()
         super().save(*args, **kwargs)
 
     def get_average_rate(self):
@@ -139,20 +161,15 @@ class Category(models.Model):
 
 
 class SaleApply(models.Model):
-    items = models.ManyToManyField('Item')
+    item = models.OneToOneField('Item', on_delete=models.CASCADE, null=True)
     sale_rate = models.FloatField()
 
     def save(self, *args, **kwargs):
-        super(SaleApply, self).save(*args, **kwargs)
-        for itm in self.items.all():
-            itm.apply_sale(self.sale_rate)
-            itm.save()
-        super(SaleApply, self).save(*args, **kwargs)
+        self.item.apply_sale(self.sale_rate)
+        super().save(*args, **kwargs)
 
     def delete(self):
-        for itm in self.items.all():
-            itm.sale = False
-            itm.save()
+        self.item.unapply_sale()
         super().delete()
 
 
@@ -174,7 +191,7 @@ class Review(models.Model):
 
 
 class SalesRecord(models.Model):
-    item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='records')
+    item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='sale_records')
     amount = models.PositiveIntegerField(default=0)
     total_price = models.FloatField(default=0)
     time = models.DateTimeField(auto_now=True)
@@ -184,17 +201,19 @@ class SalesRecord(models.Model):
         super().save(*args, **kwargs)
 
 
-    # class Sales(models.Model):
-    #     product_name = models.ForeignKey(Product)
-    #     category = models.ForeignKey(Category)
-    #     sales= models.DecimalField(max_digits=25)
+class InOutRecord(models.Model):
+    item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='in_records')
+    amount = models.PositiveIntegerField(default=0)
+    mode = models.CharField(max_length=200)
+    time = models.DateTimeField(auto_now=True)
 
-    # Sales.objects.values(
-    #         'product_name'
-    #     ).annotate(
-    #         total_sales=Sum('sales')
-    #     ).order_by('product_name')
-    #
+    def save(self, *args, **kwargs):
+        if self.mode == "arrived":
+            self.item.add_items(self.amount)
+        if self.mode == "removed":
+            self.item.rem_items(self.amount)
+        super().save(*args, **kwargs)
+
 
 
 def transliterate(string):
